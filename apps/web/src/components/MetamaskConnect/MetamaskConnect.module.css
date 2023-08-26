@@ -1,0 +1,22 @@
+.flexContainer {
+  display: flex;
+  align-self: flex-end;
+  flex-direction: row;
+  min-width: calc(100vw -2em);
+  gap: 0em;
+  row-gap: 0em;
+}
+
+.rightNav {
+  display: flex;
+  color: #ddd;
+  margin-left: auto;
+  line-height: 36px;
+  height: 36px;
+  width: auto;
+}
+
+.balance {
+  display: inline-block;
+  margin-left: 1em;
+}
