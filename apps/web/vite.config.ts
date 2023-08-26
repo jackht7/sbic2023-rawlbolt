@@ -12,23 +12,23 @@ export default ({ mode }) => {
     plugins: [react(), tsconfigPaths()],
     server: {
       proxy: {
-        '/api/getUpdates': {
+        '/api/telegram/getUpdates': {
           target: `${baseUrl}/bot${accessToken}/getUpdates`,
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace('/api/getUpdates', ''),
+          rewrite: (path) => path.replace('/api/telegram/getUpdates', ''),
         },
-        '/api/getFile': {
+        '/api/telegram/getFile': {
           target: `${baseUrl}/bot${accessToken}/getFile`,
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace('/api/getFile', ''),
+          rewrite: (path) => path.replace('/api/telegram/getFile', ''),
         },
-        '/api/downloadFile': {
+        '/api/telegram/downloadFile': {
           target: `${baseUrl}/file/bot${accessToken}`,
           changeOrigin: true,
           secure: false,
-          rewrite: (path) => path.replace('/api/downloadFile', ''),
+          rewrite: (path) => path.replace('/api/telegram/downloadFile', ''),
         },
       },
     },

@@ -33,14 +33,14 @@ const DashboardDefault = () => {
   const { wallet, setError, updateMints, mints, sdkConnected } = useMetaMask();
   const [isMinting, setIsMinting] = useState(false);
   const [ticketCollection, setTicketCollection] = useState<TicketFormatted[]>(
-    []
+    [],
   );
 
   const mintTicket = async () => {
     setIsMinting(true);
 
     const provider = new ethers.providers.Web3Provider(
-      window.ethereum as unknown as ethers.providers.ExternalProvider
+      window.ethereum as unknown as ethers.providers.ExternalProvider,
     );
     // In ethers.js, providers allow you to query data from the blockchain.
     // They represent the way you connect to the blockchain.
@@ -86,8 +86,8 @@ const DashboardDefault = () => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       pollMessage(setUpdateId).then((messages) => {
-        if (messages.length != photoListLength.current) {
-          messages.forEach(async (object) => {
+        if (messages?.length != photoListLength.current) {
+          messages?.forEach(async (object) => {
             const fileId = object.message.photo.pop().file_id;
             const file = await getFile(fileId);
 
@@ -110,7 +110,7 @@ const DashboardDefault = () => {
       window.ethereum
     ) {
       const provider = new ethers.providers.Web3Provider(
-        window.ethereum as unknown as ethers.providers.ExternalProvider
+        window.ethereum as unknown as ethers.providers.ExternalProvider,
       );
       const signer = provider.getSigner();
       const factory = new ReportTickets__factory(signer);
@@ -128,7 +128,7 @@ const DashboardDefault = () => {
           const currentTicket = await nftTickets.tokenURI(currentTokenId);
 
           const base64ToString = window.atob(
-            currentTicket.replace('data:application/json;base64,', '')
+            currentTicket.replace('data:application/json;base64,', ''),
           );
           const nftData = JSON.parse(base64ToString);
 
