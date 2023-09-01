@@ -14,6 +14,7 @@ import { ReportTickets__factory } from '~/../../blockchain';
 import { config, isSupportedNetwork } from '~/lib/networkConfig';
 import { useMetaMask } from '~/hooks/useMetaMask';
 import MainCard from '~/components/MainCard';
+import SelectableImageList from '~/components/SelectableImageList';
 import { pollMessage, getFile } from '~/telegram';
 
 export type TicketFormatted = {
@@ -28,6 +29,7 @@ const DashboardDefault = () => {
   const [updateId, setUpdateId] = useState(null);
   const [photos, setPhotos] = useState([]);
   const photoListLength = useRef(0);
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
 
   // Mint NFT
   const { wallet, setError, updateMints, mints, sdkConnected } = useMetaMask();
@@ -142,28 +144,26 @@ const DashboardDefault = () => {
   }, [wallet.address, mints, wallet.chainId, sdkConnected]);
 
   return (
-    <Grid container rowSpacing={4.5} columnSpacing={2.75}>
+    <Grid container rowSpacing={5} columnSpacing={3}>
       {/* row 1 */}
-      <Grid item xs={12} sx={{ mb: -2.25 }}>
+      <Grid item xs={12}>
         <Typography variant="h5">Dashboard</Typography>
         {photos && photos.length > 0 && (
-          <ImageList sx={{ height: 350 }} cols={3} rowHeight={1}>
-            {photos.map((item, index) => (
-              <ImageListItem key={item}>
-                <img src={item} height={500} width={500} />
-                <Button
-                  variant="contained"
-                  sx={{ marginTop: '5px' }}
-                  disabled={disableMint}
-                  onClick={mintTicket}
-                >
-                  <SiEthereum /> {isMinting ? 'Minting...' : 'Mint'} NFT
-                </Button>
-              </ImageListItem>
-            ))}
-          </ImageList>
+          <SelectableImageList
+            photos={[...photos]}
+            onImagesSelected={setSelectedPhotos}
+          />
         )}
       </Grid>
+
+      {/* <Button
+        variant="contained"
+        sx={{ marginTop: '5px' }}
+        disabled={disableMint}
+        onClick={mintTicket}
+      >
+        <SiEthereum /> {isMinting ? 'Minting...' : 'Mint'} NFT
+      </Button> */}
 
       <Grid
         item
@@ -175,7 +175,18 @@ const DashboardDefault = () => {
       <Grid item xs={12} md={10} lg={10}>
         <Grid container alignItems="center" justifyContent="space-between">
           <Grid item>
-            <Typography variant="h5">Recent Reports</Typography>
+            <Typography variant="h5">Draft Reports</Typography>
+          </Grid>
+          <Grid item />
+        </Grid>
+        <MainCard sx={{ mt: 2 }} content={false}></MainCard>
+      </Grid>
+
+      {/* row 3 */}
+      <Grid item xs={12} md={10} lg={10}>
+        <Grid container alignItems="center" justifyContent="space-between">
+          <Grid item>
+            <Typography variant="h5">Recent Submission</Typography>
           </Grid>
           <Grid item />
         </Grid>

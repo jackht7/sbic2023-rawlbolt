@@ -16,6 +16,7 @@
     "@ant-design/icons": "^5.2.5",
     "@emotion/styled": "^11.11.0",
     "@metamask/sdk": "^0.4.2",
+    "@mui/icons-material": "^5.14.7",
     "@mui/material": "^5.14.4",
     "@reduxjs/toolkit": "^1.9.5",
     "dotenv": "^16.3.1",
