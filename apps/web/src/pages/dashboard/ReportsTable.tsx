@@ -176,11 +176,11 @@ export default function ReportTable(props: { collection: TicketFormatted[] }) {
           `Site-A Column-${getRandomInt(1, 50)}`,
           40,
           Number(`${getRandomInt(0, 2)}`),
-          `${getRandomInt(1, 10000)}`
-        )
+          `${getRandomInt(1, 10000)}`,
+        ),
       );
     });
-    setReports((oldArray) => [...oldArray, ...list]);
+    setReports(list);
   }, [props.collection]);
 
   const isSelected = (trackingNo) => selected.indexOf(trackingNo) !== -1;
@@ -276,7 +276,7 @@ export default function ReportTable(props: { collection: TicketFormatted[] }) {
                     <TableCell align="right">{row.amount}</TableCell>
                   </TableRow>
                 );
-              }
+              },
             )}
           </TableBody>
         </Table>

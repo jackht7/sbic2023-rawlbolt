@@ -16,6 +16,7 @@ import { useMetaMask } from '~/hooks/useMetaMask';
 import MainCard from '~/components/MainCard';
 import SelectableImageList from '~/components/SelectableImageList';
 import { pollMessage, getFile } from '~/telegram';
+import FormikContainer from '~/components/FormikContainer';
 
 export type TicketFormatted = {
   tokenId: string;
@@ -154,6 +155,13 @@ const DashboardDefault = () => {
             onImagesSelected={setSelectedPhotos}
           />
         )}
+      </Grid>
+
+      <Grid item xs={12}>
+        <Typography variant="h5">Report Template</Typography>
+        <MainCard sx={{ mt: 2 }}>
+          <FormikContainer />
+        </MainCard>
       </Grid>
 
       {/* <Button

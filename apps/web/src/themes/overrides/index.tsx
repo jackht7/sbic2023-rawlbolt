@@ -5,6 +5,7 @@ import Button from './Button';
 import CardContent from './CardContent';
 import Checkbox from './Checkbox';
 import Chip from './Chip';
+import Form from './Form';
 import IconButton from './IconButton';
 import InputLabel from './InputLabel';
 import LinearProgress from './LinearProgress';
@@ -23,6 +24,7 @@ export default function ComponentsOverrides(theme) {
     CardContent(),
     Checkbox(theme),
     Chip(theme),
+    Form(),
     IconButton(theme),
     InputLabel(theme),
     LinearProgress(),
@@ -32,6 +34,6 @@ export default function ComponentsOverrides(theme) {
     Tab(theme),
     TableCell(theme),
     Tabs(),
-    Typography()
+    Typography(),
   );
 }
