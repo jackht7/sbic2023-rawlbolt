@@ -160,7 +160,7 @@ const DashboardDefault = () => {
       <Grid item xs={12}>
         <Typography variant="h5">Report Template</Typography>
         <MainCard sx={{ mt: 2 }}>
-          <FormikContainer />
+          <FormikContainer photos={selectedPhotos} />
         </MainCard>
       </Grid>
 

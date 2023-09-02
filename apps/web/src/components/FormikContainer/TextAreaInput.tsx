@@ -79,7 +79,11 @@ const TextAreaInput = (props) => {
         onChange={formik.handleChange}
         placeholder={placeholder}
         minRows={4}
-        style={{ padding: '12px' }}
+        style={{
+          padding: '12px',
+          borderRadius: '8px 8px 0 8px',
+          border: '1px solid #d9d9d9',
+        }}
       />
       {formik.touched[name] && formik.errors[name] && (
         <FormHelperText error id={label}>

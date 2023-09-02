@@ -5,10 +5,11 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DateField } from '@mui/x-date-pickers/DateField';
 import { isValid } from 'date-fns';
 import { utcToZonedTime } from 'date-fns-tz';
+import dayjs from 'dayjs';
 
 const DateInput = (props) => {
   const { label, name, formik, placeholder, ...others } = props;
-  const [value, setValue] = useState(null);
+  const [value, setValue] = useState(dayjs('2023-01-01'));
   const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   return (
