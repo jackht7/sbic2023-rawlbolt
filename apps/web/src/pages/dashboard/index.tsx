@@ -1,7 +1,16 @@
 import { useEffect, useState, useRef } from 'react';
 import { ethers } from 'ethers';
-import { Grid, Typography, Button, CircularProgress } from '@mui/material';
+import {
+  Grid,
+  Typography,
+  Button,
+  CircularProgress,
+  TextareaAutosize,
+  Alert,
+  Snackbar,
+} from '@mui/material';
 import { styled } from '@mui/system';
+import OpenAI from 'openai';
 import { SiEthereum } from 'react-icons/si';
 
 import _ReportsTable from './ReportsTable';
@@ -25,15 +34,27 @@ const ButtonStyled = styled(Button)({
   margin: '4px 4px 0 0',
 });
 
+// OpenAI
+// TODO: create server to communicate with OpenAI
+// Using the openai package in a browser is discouraged
+const OPEN_AI_API_KEY = import.meta.env.VITE_PUBLIC_OPEN_AI_API_KEY;
+const openai = new OpenAI({
+  apiKey: OPEN_AI_API_KEY,
+  dangerouslyAllowBrowser: true,
+});
+
 const DashboardDefault = () => {
   // TODO: use updateId to keep track latest message
   const [updateId, setUpdateId] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [texts, setTexts] = useState([]);
+  const [summary, setSummary] = useState('');
   const photoListLength = useRef(0);
   const textListLength = useRef(0);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [pollingInterval, setPollingInterval] = useState(null);
+  const [summarySuccessAlert, setSummarySuccessAlert] = useState(false);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
 
   // Mint NFT
   const { wallet, setError, updateMints, mints, sdkConnected } = useMetaMask();
@@ -43,6 +64,10 @@ const DashboardDefault = () => {
   );
 
   const startPolling = () => {
+    // reset
+    photoListLength.current = 0;
+    textListLength.current = 0;
+
     const intervalId = setInterval(() => {
       pollMessages(setUpdateId).then((messages) => {
         // photos
@@ -69,6 +94,7 @@ const DashboardDefault = () => {
           });
 
           Promise.all(promises).then(() => setTexts(texts));
+          setSummary(texts.join(', '));
           textListLength.current = messagesWithText.length;
         }
       });
@@ -79,6 +105,29 @@ const DashboardDefault = () => {
   const stopPolling = () => {
     clearInterval(pollingInterval);
     setPollingInterval(null);
+  };
+
+  const generateSummary = async () => {
+    setGeneratingSummary(true);
+    try {
+      const completion = await openai.chat.completions.create({
+        messages: [
+          { role: 'system', content: 'construction report' },
+          {
+            role: 'user',
+            content: `generate summary in point form for the following ${summary}`,
+          },
+        ],
+        model: 'gpt-3.5-turbo',
+      });
+
+      setSummary(completion.choices[0].message.content);
+      setSummarySuccessAlert(true);
+      setGeneratingSummary(false);
+    } catch {
+      setSummarySuccessAlert(false);
+      setGeneratingSummary(false);
+    }
   };
 
   const mintTicket = async () => {
@@ -204,15 +253,62 @@ const DashboardDefault = () => {
             onImagesSelected={setSelectedPhotos}
           />
         )}
-        {texts &&
-          texts.length > 0 &&
-          texts.map((text) => <div key={text}>{text}</div>)}
+
+        {texts && texts.length > 0 && (
+          <>
+            <Typography variant="subtitle1">
+              ----- Work Summary -----
+            </Typography>
+            <TextareaAutosize
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
+              minRows={2}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px 8px 0 8px',
+                border: '1px solid #d9d9d9',
+              }}
+            ></TextareaAutosize>
+            <ButtonStyled
+              variant="contained"
+              size="small"
+              onClick={generateSummary}
+              disabled={generatingSummary}
+            >
+              {generatingSummary ? (
+                <>
+                  <CircularProgress size={15} color="info" />
+                  &nbsp;&nbsp;&nbsp;&nbsp;generating...
+                </>
+              ) : (
+                'generate'
+              )}
+            </ButtonStyled>
+          </>
+        )}
       </Grid>
+
+      {/* Success Alert */}
+      <Snackbar
+        open={summarySuccessAlert}
+        autoHideDuration={4000}
+        onClose={() => setSummarySuccessAlert(false)}
+      >
+        <Alert
+          elevation={6}
+          variant="filled"
+          onClose={() => setSummarySuccessAlert(false)}
+          severity="success"
+        >
+          Summary generated successfully!
+        </Alert>
+      </Snackbar>
 
       <Grid item xs={12}>
         <Typography variant="h5">Report Template</Typography>
         <MainCard sx={{ mt: 2 }}>
-          <FormikContainer photos={selectedPhotos} />
+          <FormikContainer photos={selectedPhotos} description={summary} />
         </MainCard>
       </Grid>
 

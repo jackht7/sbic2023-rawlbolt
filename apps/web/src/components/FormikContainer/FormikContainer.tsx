@@ -33,7 +33,7 @@ const savePdfToFile = (pdfArrayBuffer, fileName) => {
 };
 
 const FormikContainer = (props) => {
-  const { photos } = props;
+  const { photos, description } = props;
   const [successAlertOpen, setSuccessAlertOpen] = useState(false);
   const [failureAlertOpen, setFailureAlertOpen] = useState(false);
 
@@ -110,6 +110,7 @@ const FormikContainer = (props) => {
                   label="Description"
                   name="description"
                   placeholder="Overall Progress..."
+                  description={description}
                   formik={formik}
                 />
               </Grid>

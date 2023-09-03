@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FormHelperText,
   InputLabel,
@@ -8,7 +8,10 @@ import {
 import { styled } from '@mui/system';
 
 const TextAreaInput = (props) => {
-  const { label, name, formik, placeholder, ...others } = props;
+  const { label, name, formik, placeholder, description, ...others } = props;
+  const [value, setValue] = useState('');
+
+  useEffect(() => setValue(description), [description]);
 
   // StyledTextarea
   const blue = {
@@ -74,9 +77,13 @@ const TextAreaInput = (props) => {
       <TextareaAutosize
         id={label}
         name={name}
-        value={formik.values[name]}
+        value={value}
         onBlur={formik.handleBlur}
-        onChange={formik.handleChange}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          formik.setFieldValue(name, newValue);
+          setValue(newValue);
+        }}
         placeholder={placeholder}
         minRows={4}
         style={{
