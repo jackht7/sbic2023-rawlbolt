@@ -16,16 +16,12 @@ if (isProd) {
   downloadFileUrl = '/api/telegram/downloadFile';
 }
 
-export const pollMessage = async (setUpdateId, offset = undefined) => {
-  const filePaths = [];
-
+export const pollMessages = async (setUpdateId, offset = undefined) => {
   try {
     const res = (
       await (await fetch(`${getUpdatesUrl}?offset=${offset}`)).json()
     ).result;
-
-    const messagesWithPhoto = res.filter((obj) => obj.message?.photo);
-    return messagesWithPhoto;
+    return res;
   } catch (e) {
     console.error('Unable to fetch getUpdates from Telegram Bot');
   }

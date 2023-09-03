@@ -26,7 +26,11 @@ const SelectableImageList = ({ photos, onImagesSelected }) => {
   }, [selectedImages]);
 
   return (
-    <ImageList sx={{ height: 250 }} cols={4} rowHeight={100}>
+    <ImageList
+      sx={{ height: '250px', marginTop: '20px' }}
+      cols={4}
+      rowHeight={100}
+    >
       {photos.map((item, index) => (
         <ImageListItem key={item} sx={{ marginBottom: '30px' }}>
           <img src={item} />
