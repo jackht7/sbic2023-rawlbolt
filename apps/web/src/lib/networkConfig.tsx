@@ -1,3 +1,5 @@
+const contractAddress = import.meta.env.VITE_PUBLIC_SMART_CONTRACT_ADDRESS;
+
 export const config = {
   // '0x13881': {
   //   name: 'Mumbai',
@@ -8,7 +10,8 @@ export const config = {
   // },
   '0xe704': {
     name: 'Linea',
-    contractAddress: '0x8FEa77F27f85C1E4752cbbA62E024557f20d7935',
+    contractAddress:
+      contractAddress || '0x8FEa77F27f85C1E4752cbbA62E024557f20d7935',
     symbol: 'ETH',
     blockExplorer: 'https://explorer.goerli.linea.build',
     rpcUrl: 'https://rpc.goerli.linea.build',
@@ -28,7 +31,7 @@ export const config = {
  * @returns A function that takes an id and returns a boolean.
  */
 export const isSupportedNetwork = (
-  id?: string | null
+  id?: string | null,
 ): id is keyof typeof config => {
   if (!id) {
     return false;

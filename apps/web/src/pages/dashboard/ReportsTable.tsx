@@ -243,6 +243,8 @@ export default function ReportTable(props: { collection: TicketFormatted[] }) {
                 </TableRow>
               );
             })}
+
+            {/* example */}
             {stableSort(rows, getComparator(order, orderBy)).map(
               (row, index) => {
                 const isItemSelected = isSelected(row.trackingNo);

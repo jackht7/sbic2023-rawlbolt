@@ -13,6 +13,7 @@ export default function Button(theme) {
       styleOverrides: {
         root: {
           fontWeight: 400,
+          textTransform: 'none',
         },
         contained: {
           ...disabledStyle,

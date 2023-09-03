@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
-import { Button, Grid, Snackbar, Alert } from '@mui/material';
+import { Button, Grid, Snackbar, Alert, CircularProgress } from '@mui/material';
 import { ExportSdkClient } from '@exportsdk/client';
 import { saveAs } from 'file-saver';
+import { Web3Storage } from 'web3.storage';
 
 import FormikControl from './FormikControl';
 
@@ -26,27 +27,61 @@ const validationSchema = Yup.object({
 
 const accessToken = import.meta.env.VITE_PUBLIC_EXPORTSDK_API_KEY;
 const templateId = import.meta.env.VITE_PUBLIC_EXPORTSDK_TEMPLATE_ID;
-const client = new ExportSdkClient(accessToken);
+const exportSdkClient = new ExportSdkClient(accessToken);
 const savePdfToFile = (pdfArrayBuffer, fileName) => {
   const blob = new Blob([pdfArrayBuffer], { type: 'application/pdf' });
   saveAs(blob, fileName);
 };
 
+const WEB3_STORAGE_API_KEY = import.meta.env.VITE_PUBLIC_WEB3_STORAGE_API_KEY;
+const web3StorageClient = new Web3Storage({ token: WEB3_STORAGE_API_KEY });
+
 const FormikContainer = (props) => {
-  const { photos, description } = props;
+  const { photos, description, onCreated } = props;
+  const [creating, setCreating] = useState(false);
   const [successAlertOpen, setSuccessAlertOpen] = useState(false);
   const [failureAlertOpen, setFailureAlertOpen] = useState(false);
 
   const handleSubmit = async (values, { resetForm }) => {
-    try {
-      const response = await client.renderPdf(templateId, values);
-      savePdfToFile(response.data, `${values.projectName}- ${values.location}`);
+    // TODO: put under same folder path?
+    const imageFileName = `${values.projectName}-${values.location}.png`;
+    const pdfFileName = `${values.projectName}-${values.location}.pdf`;
+    setCreating(true);
 
-      setSuccessAlertOpen(true);
-      resetForm();
-    } catch {
-      setFailureAlertOpen(true);
-    }
+    fetch(values.imageUrl)
+      .then((response) => response.blob())
+      .then(async (blob) => {
+        const imageCid = await web3StorageClient.put([
+          new File([blob], imageFileName),
+        ]);
+
+        // overwrite the imageUrl
+        values.imageUrl = `https://ipfs.io/ipfs/${imageCid}/${imageFileName}`;
+
+        // store the pdf to ipfs
+        const response = await exportSdkClient.renderPdf(templateId, values);
+        const pdfCid = await web3StorageClient.put([
+          new File([response.data], pdfFileName),
+        ]);
+
+        // store the pdf locally
+        savePdfToFile(response.data, pdfFileName);
+
+        // pass IPFS hash to parent
+        onCreated({
+          ipfsHash: pdfCid,
+          ipfsFullAddress: `https://ipfs.io/ipfs/${pdfCid}/${pdfFileName}`,
+          reportName: pdfFileName,
+        });
+
+        setSuccessAlertOpen(true);
+        resetForm();
+        setCreating(false);
+      })
+      .catch((error) => {
+        setFailureAlertOpen(true);
+        setCreating(false);
+      });
   };
 
   return (
@@ -117,10 +152,18 @@ const FormikContainer = (props) => {
               <Grid item xs={12}>
                 <Button
                   type="submit"
-                  disabled={!formik.isValid}
+                  size="small"
+                  disabled={!formik.isValid || creating}
                   variant="contained"
                 >
-                  Generate
+                  {creating ? (
+                    <>
+                      <CircularProgress size={15} color="info" />
+                      &nbsp;&nbsp;&nbsp;&nbsp;creating...
+                    </>
+                  ) : (
+                    'create'
+                  )}
                 </Button>
               </Grid>
             </Grid>
@@ -140,7 +183,7 @@ const FormikContainer = (props) => {
           onClose={() => setSuccessAlertOpen(false)}
           severity="success"
         >
-          Report generated successfully!
+          Report generated and stored in IPFS successfully!
         </Alert>
       </Snackbar>
 
@@ -154,7 +197,7 @@ const FormikContainer = (props) => {
           elevation={6}
           variant="filled"
           onClose={() => setFailureAlertOpen(false)}
-          severity="success"
+          severity="error"
         >
           Error when generating report!
         </Alert>

@@ -12,6 +12,10 @@ export const formatAddress = (addr: string) => {
   return `${addr.substring(0, 5)}...${addr.substring(39)}`;
 };
 
+export const formatIpfsHash = (addr: string) => {
+  return `${addr.substring(0, 5)}...${addr.substring(-8)}`;
+};
+
 export const timeDiff = (date: Date) => {
   var delta = Math.abs(date.valueOf() - new Date().valueOf()) / 1000;
   var result = {};
