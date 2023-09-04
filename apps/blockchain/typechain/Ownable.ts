@@ -109,7 +109,7 @@ export interface Ownable extends BaseContract {
     owner(overrides?: CallOverrides): Promise<[string]>;
 
     /**
-     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
      */
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -130,7 +130,7 @@ export interface Ownable extends BaseContract {
   owner(overrides?: CallOverrides): Promise<string>;
 
   /**
-   * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+   * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
    */
   renounceOwnership(
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -151,7 +151,7 @@ export interface Ownable extends BaseContract {
     owner(overrides?: CallOverrides): Promise<string>;
 
     /**
-     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
      */
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
@@ -182,7 +182,7 @@ export interface Ownable extends BaseContract {
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     /**
-     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
      */
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -204,7 +204,7 @@ export interface Ownable extends BaseContract {
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     /**
-     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
      */
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }

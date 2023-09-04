@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
+  Button,
   Link,
   Stack,
   Table,
@@ -13,19 +14,23 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
+import { ethers } from 'ethers';
 
 import Dot from '~/components/@extended/Dot';
 import { TicketFormatted } from '../dashboard';
+import { useMetaMask } from '~/hooks/useMetaMask';
+import { ReportTickets__factory } from '~/../../blockchain';
+import { config, isSupportedNetwork } from '~/lib/networkConfig';
 
-function createData(trackingNo, name, order, status, amount) {
-  return { trackingNo, name, order, status, amount };
-}
+const createData = (trackingNo, name, status, amount) => {
+  return { trackingNo, name, status, amount };
+};
 
 let rows = [
-  createData(84564564, 'Site-A Column-11', 40, 2, 40570),
-  createData(98764564, 'Site-B Slab-45', 300, 0, 180139),
-  createData(98756325, 'Block-12', 355, 1, 90989),
-  createData(98652366, 'Retaining Wall-12', 50, 1, 10239),
+  createData(84564564, 'Site-A Column-11', 2, 40570),
+  createData(98764564, 'Site-B Slab-45', 0, 180139),
+  createData(98756325, 'Block-12', 1, 90989),
+  createData(98652366, 'Retaining Wall-12', 1, 10239),
 ];
 
 const getRandomInt = (min, max) => {
@@ -34,7 +39,7 @@ const getRandomInt = (min, max) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-function descendingComparator(a, b, orderBy) {
+const descendingComparator = (a, b, orderBy) => {
   if (b[orderBy] < a[orderBy]) {
     return -1;
   }
@@ -42,15 +47,15 @@ function descendingComparator(a, b, orderBy) {
     return 1;
   }
   return 0;
-}
+};
 
-function getComparator(order, orderBy) {
+const getComparator = (order, orderBy) => {
   return order === 'desc'
     ? (a, b) => descendingComparator(a, b, orderBy)
     : (a, b) => -descendingComparator(a, b, orderBy);
-}
+};
 
-function stableSort(array, comparator) {
+const stableSort = (array, comparator) => {
   const stabilizedThis = array.map((el, index) => [el, index]);
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
@@ -60,12 +65,7 @@ function stableSort(array, comparator) {
     return a[1] - b[1];
   });
   return stabilizedThis.map((el) => el[0]);
-}
-
-// type HeadCell = {
-//   align: React.CSSProperties;
-//   [key: string]: any;
-// };
+};
 
 const headCells = [
   {
@@ -79,12 +79,6 @@ const headCells = [
     align: 'left' as const,
     disablePadding: true,
     label: 'Report Name',
-  },
-  {
-    id: 'order',
-    align: 'right' as const,
-    disablePadding: false,
-    label: 'Total Order',
   },
   {
     id: 'status',
@@ -101,7 +95,7 @@ const headCells = [
   },
 ];
 
-function ReportTableHead({ order, orderBy }) {
+const ReportTableHead = ({ order, orderBy }) => {
   return (
     <TableHead>
       <TableRow>
@@ -118,14 +112,14 @@ function ReportTableHead({ order, orderBy }) {
       </TableRow>
     </TableHead>
   );
-}
+};
 
 ReportTableHead.propTypes = {
   order: PropTypes.string,
   orderBy: PropTypes.string,
 };
 
-const OrderStatus = ({ status }) => {
+const OrderStatus = ({ status, tokenId, handleApprove, handleReject }) => {
   let color;
   let title;
 
@@ -151,6 +145,26 @@ const OrderStatus = ({ status }) => {
     <Stack direction="row" spacing={1} alignItems="center">
       <Dot color={color} />
       <Typography>{title}</Typography>
+      {title == 'Pending' && (
+        <>
+          <Button
+            variant="outlined"
+            size="small"
+            color="success"
+            onClick={() => handleApprove(tokenId)}
+          >
+            approve
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            color="error"
+            onClick={() => handleReject(tokenId)}
+          >
+            reject
+          </Button>
+        </>
+      )}
     </Stack>
   );
 };
@@ -159,31 +173,171 @@ OrderStatus.propTypes = {
   status: PropTypes.number,
 };
 
-export default function ReportTable(props: { collection: TicketFormatted[] }) {
+// TODO: refactor for the checking of provider
+export default function ReportTable(props) {
   const [order] = useState('asc');
   const [orderBy] = useState('trackingNo');
   const [selected] = useState([]);
   const [reports, setReports] = useState([]);
+  const [mintingRequests, setMintingRequests] = useState([]);
 
-  // TODO: create entries via form
+  const { wallet, mints, sdkConnected } = useMetaMask();
+  const [ticketCollection, setTicketCollection] = useState<TicketFormatted[]>(
+    [],
+  );
+
+  // fetch minted NFTs
   useEffect(() => {
-    const arr = Array.from(props.collection);
+    if (
+      typeof window !== 'undefined' &&
+      wallet.address !== null &&
+      window.ethereum
+    ) {
+      const provider = new ethers.providers.Web3Provider(
+        window.ethereum as unknown as ethers.providers.ExternalProvider,
+      );
+      const signer = provider.getSigner();
+      const factory = new ReportTickets__factory(signer);
+
+      if (!isSupportedNetwork(wallet.chainId)) {
+        return;
+      }
+
+      const nftTickets = factory.attach(config[wallet.chainId].contractAddress);
+      const ticketsRetrieved = [];
+
+      nftTickets.walletOfOwner(wallet.address).then((ownedTickets) => {
+        const promises = ownedTickets.map(async (token) => {
+          const currentTokenId = token.toString();
+          const currentTicket = await nftTickets.tokenURI(currentTokenId);
+
+          const base64ToString = window.atob(
+            currentTicket.replace('data:application/json;base64,', ''),
+          );
+          // const nftData = JSON.parse(base64ToString);
+
+          ticketsRetrieved.push({
+            tokenId: currentTokenId,
+          });
+        });
+        Promise.all(promises).then(() => setTicketCollection(ticketsRetrieved));
+      });
+    }
+  }, [wallet.address, mints, wallet.chainId, sdkConnected]);
+
+  // fetch minting requests
+  useEffect(() => {
+    if (
+      typeof window !== 'undefined' &&
+      wallet.address !== null &&
+      window.ethereum
+    ) {
+      const provider = new ethers.providers.Web3Provider(
+        window.ethereum as unknown as ethers.providers.ExternalProvider,
+      );
+      const signer = provider.getSigner();
+      const factory = new ReportTickets__factory(signer);
+
+      if (!isSupportedNetwork(wallet.chainId)) {
+        return;
+      }
+
+      const nftTickets = factory.attach(config[wallet.chainId].contractAddress);
+
+      const getMintingRequests = async () => {
+        const totalSupplyInHex = await nftTickets.totalSupply();
+        const totalSupply = parseInt(totalSupplyInHex._hex, 16);
+        const mintingRequests = [];
+
+        for (let tokenId = 1; tokenId <= totalSupply; tokenId++) {
+          const request = await nftTickets.mintingRequests(tokenId);
+          mintingRequests.push({ tokenId, ...request });
+        }
+
+        return mintingRequests;
+      };
+
+      getMintingRequests().then((res) => setMintingRequests(res));
+
+      const intervalId = setInterval(() => {
+        getMintingRequests().then((res) => setMintingRequests(res));
+      }, 5000);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    }
+  }, []);
+
+  useEffect(() => {
+    const arr = Array.from(ticketCollection);
     const list = [];
+    let status = 0;
     arr.forEach((nft: { tokenId: string }) => {
+      const request = mintingRequests.find(
+        (item) => item.tokenId == nft.tokenId,
+      );
+
+      if (request) {
+        status = request.approved ? 1 : request.status == 'rejected' ? 2 : 1;
+      }
+
       list.push(
         createData(
           Number(nft.tokenId),
           `Site-A Column-${getRandomInt(1, 50)}`,
-          40,
-          Number(`${getRandomInt(0, 2)}`),
+          status,
           `${getRandomInt(1, 10000)}`,
         ),
       );
     });
+
     setReports(list);
-  }, [props.collection]);
+  }, [mintingRequests, ticketCollection]);
 
   const isSelected = (trackingNo) => selected.indexOf(trackingNo) !== -1;
+
+  const handleApprove = (tokenId) => {
+    if (
+      typeof window !== 'undefined' &&
+      wallet.address !== null &&
+      window.ethereum
+    ) {
+      const provider = new ethers.providers.Web3Provider(
+        window.ethereum as unknown as ethers.providers.ExternalProvider,
+      );
+      const signer = provider.getSigner();
+      const factory = new ReportTickets__factory(signer);
+
+      if (!isSupportedNetwork(wallet.chainId)) {
+        return;
+      }
+
+      const nftTickets = factory.attach(config[wallet.chainId].contractAddress);
+      nftTickets.approveMinting(tokenId);
+    }
+  };
+
+  const handleReject = (tokenId) => {
+    if (
+      typeof window !== 'undefined' &&
+      wallet.address !== null &&
+      window.ethereum
+    ) {
+      const provider = new ethers.providers.Web3Provider(
+        window.ethereum as unknown as ethers.providers.ExternalProvider,
+      );
+      const signer = provider.getSigner();
+      const factory = new ReportTickets__factory(signer);
+
+      if (!isSupportedNetwork(wallet.chainId)) {
+        return;
+      }
+
+      const nftTickets = factory.attach(config[wallet.chainId].contractAddress);
+      nftTickets.approveMinting(tokenId);
+    }
+  };
 
   return (
     <Box>
@@ -235,9 +389,13 @@ export default function ReportTable(props: { collection: TicketFormatted[] }) {
                     </Link>
                   </TableCell>
                   <TableCell align="left">{row.name}</TableCell>
-                  <TableCell align="right">{row.order}</TableCell>
                   <TableCell align="left">
-                    <OrderStatus status={row.status} />
+                    <OrderStatus
+                      status={row.status}
+                      tokenId={row.trackingNo}
+                      handleApprove={handleApprove}
+                      handleReject={handleReject}
+                    />
                   </TableCell>
                   <TableCell align="right">{row.amount}</TableCell>
                 </TableRow>
@@ -271,9 +429,13 @@ export default function ReportTable(props: { collection: TicketFormatted[] }) {
                       </Link>
                     </TableCell>
                     <TableCell align="left">{row.name}</TableCell>
-                    <TableCell align="right">{row.order}</TableCell>
                     <TableCell align="left">
-                      <OrderStatus status={row.status} />
+                      <OrderStatus
+                        status={row.status}
+                        tokenId={row.trackingNo}
+                        handleApprove={() => {}}
+                        handleReject={() => {}}
+                      />
                     </TableCell>
                     <TableCell align="right">{row.amount}</TableCell>
                   </TableRow>

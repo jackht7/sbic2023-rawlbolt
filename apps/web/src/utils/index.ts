@@ -13,7 +13,7 @@ export const formatAddress = (addr: string) => {
 };
 
 export const formatIpfsHash = (addr: string) => {
-  return `${addr.substring(0, 5)}...${addr.substring(-8)}`;
+  return `${addr.substring(0, 5)}...${addr.substring(addr.length - 8)}`;
 };
 
 export const timeDiff = (date: Date) => {

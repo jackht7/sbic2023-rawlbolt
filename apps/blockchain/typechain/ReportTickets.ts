@@ -39,6 +39,7 @@ export interface ReportTicketsInterface extends utils.Interface {
     "isApprovedForAll(address,address)": FunctionFragment;
     "milestoneTicketHolders(uint256)": FunctionFragment;
     "milestoneTicketPrice()": FunctionFragment;
+    "mintingRequests(uint256)": FunctionFragment;
     "name()": FunctionFragment;
     "owner()": FunctionFragment;
     "ownerOf(uint256)": FunctionFragment;
@@ -56,8 +57,9 @@ export interface ReportTicketsInterface extends utils.Interface {
     "walletOfOwner(address)": FunctionFragment;
     "contractURI()": FunctionFragment;
     "mintNFT()": FunctionFragment;
+    "approveMinting(uint256)": FunctionFragment;
+    "rejectMinting(uint256)": FunctionFragment;
     "tokenURI(uint256)": FunctionFragment;
-    "generateNftSvgByTokenId(uint256)": FunctionFragment;
   };
 
   getFunction(
@@ -71,6 +73,7 @@ export interface ReportTicketsInterface extends utils.Interface {
       | "isApprovedForAll"
       | "milestoneTicketHolders"
       | "milestoneTicketPrice"
+      | "mintingRequests"
       | "name"
       | "owner"
       | "ownerOf"
@@ -88,8 +91,9 @@ export interface ReportTicketsInterface extends utils.Interface {
       | "walletOfOwner"
       | "contractURI"
       | "mintNFT"
+      | "approveMinting"
+      | "rejectMinting"
       | "tokenURI"
-      | "generateNftSvgByTokenId"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -127,6 +131,10 @@ export interface ReportTicketsInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "milestoneTicketPrice",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "mintingRequests",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -198,11 +206,15 @@ export interface ReportTicketsInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "mintNFT", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "tokenURI",
+    functionFragment: "approveMinting",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "generateNftSvgByTokenId",
+    functionFragment: "rejectMinting",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "tokenURI",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
 
@@ -228,6 +240,10 @@ export interface ReportTicketsInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "milestoneTicketPrice",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "mintingRequests",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
@@ -283,11 +299,15 @@ export interface ReportTicketsInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "mintNFT", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "tokenURI", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "generateNftSvgByTokenId",
+    functionFragment: "approveMinting",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "rejectMinting",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "tokenURI", data: BytesLike): Result;
 
   events: {
     "Approval(address,address,uint256)": EventFragment;
@@ -427,6 +447,17 @@ export interface ReportTickets extends BaseContract {
 
     milestoneTicketPrice(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    mintingRequests(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<
+      [string, boolean, string] & {
+        minter: string;
+        approved: boolean;
+        status: string;
+      }
+    >;
+
     /**
      * See {IERC721Metadata-name}.
      */
@@ -446,7 +477,7 @@ export interface ReportTickets extends BaseContract {
     ): Promise<[string]>;
 
     /**
-     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
      */
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -550,12 +581,17 @@ export interface ReportTickets extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    tokenURI(
-      id: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<[string]>;
+    approveMinting(
+      tokenId: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
 
-    generateNftSvgByTokenId(
+    rejectMinting(
+      tokenId: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    tokenURI(
       id: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<[string]>;
@@ -611,6 +647,17 @@ export interface ReportTickets extends BaseContract {
 
   milestoneTicketPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
+  mintingRequests(
+    arg0: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<
+    [string, boolean, string] & {
+      minter: string;
+      approved: boolean;
+      status: string;
+    }
+  >;
+
   /**
    * See {IERC721Metadata-name}.
    */
@@ -630,7 +677,7 @@ export interface ReportTickets extends BaseContract {
   ): Promise<string>;
 
   /**
-   * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+   * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
    */
   renounceOwnership(
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -734,12 +781,17 @@ export interface ReportTickets extends BaseContract {
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  tokenURI(
-    id: PromiseOrValue<BigNumberish>,
-    overrides?: CallOverrides
-  ): Promise<string>;
+  approveMinting(
+    tokenId: PromiseOrValue<BigNumberish>,
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
 
-  generateNftSvgByTokenId(
+  rejectMinting(
+    tokenId: PromiseOrValue<BigNumberish>,
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  tokenURI(
     id: PromiseOrValue<BigNumberish>,
     overrides?: CallOverrides
   ): Promise<string>;
@@ -795,6 +847,17 @@ export interface ReportTickets extends BaseContract {
 
     milestoneTicketPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
+    mintingRequests(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<
+      [string, boolean, string] & {
+        minter: string;
+        approved: boolean;
+        status: string;
+      }
+    >;
+
     /**
      * See {IERC721Metadata-name}.
      */
@@ -814,7 +877,7 @@ export interface ReportTickets extends BaseContract {
     ): Promise<string>;
 
     /**
-     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
      */
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
@@ -914,12 +977,17 @@ export interface ReportTickets extends BaseContract {
 
     mintNFT(overrides?: CallOverrides): Promise<BigNumber>;
 
-    tokenURI(
-      id: PromiseOrValue<BigNumberish>,
+    approveMinting(
+      tokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<string>;
+    ): Promise<void>;
 
-    generateNftSvgByTokenId(
+    rejectMinting(
+      tokenId: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    tokenURI(
       id: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<string>;
@@ -1020,6 +1088,11 @@ export interface ReportTickets extends BaseContract {
 
     milestoneTicketPrice(overrides?: CallOverrides): Promise<BigNumber>;
 
+    mintingRequests(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     /**
      * See {IERC721Metadata-name}.
      */
@@ -1039,7 +1112,7 @@ export interface ReportTickets extends BaseContract {
     ): Promise<BigNumber>;
 
     /**
-     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
      */
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -1143,12 +1216,17 @@ export interface ReportTickets extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    tokenURI(
-      id: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+    approveMinting(
+      tokenId: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    generateNftSvgByTokenId(
+    rejectMinting(
+      tokenId: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    tokenURI(
       id: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
@@ -1209,6 +1287,11 @@ export interface ReportTickets extends BaseContract {
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
+    mintingRequests(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     /**
      * See {IERC721Metadata-name}.
      */
@@ -1228,7 +1311,7 @@ export interface ReportTickets extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     /**
-     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
+     * Leaves the contract without owner. It will not be possible to call `onlyOwner` functions. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby disabling any functionality that is only available to the owner.
      */
     renounceOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -1332,12 +1415,17 @@ export interface ReportTickets extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    tokenURI(
-      id: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
+    approveMinting(
+      tokenId: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    generateNftSvgByTokenId(
+    rejectMinting(
+      tokenId: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    tokenURI(
       id: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;

@@ -11,9 +11,9 @@ import {
 } from '@mui/material';
 import { styled } from '@mui/system';
 import OpenAI from 'openai';
-import { SiEthereum } from 'react-icons/si';
 
-import _ReportsTable from './ReportsTable';
+import ReportsTable from './ReportsTable';
+import DraftReports from './DraftReports';
 import { ReportTickets__factory } from '~/../../blockchain';
 import { config, isSupportedNetwork } from '~/lib/networkConfig';
 import { useMetaMask } from '~/hooks/useMetaMask';
@@ -25,23 +25,20 @@ import FormikContainer from '~/components/FormikContainer';
 export type TicketFormatted = {
   tokenId: string;
 };
-const ReportsTable = _ReportsTable as unknown as React.JSXElementConstructor<{
-  collection: TicketFormatted[];
-}>;
 
 const ButtonStyled = styled(Button)({
-  textTransform: 'none',
   margin: '4px 4px 0 0',
 });
 
-// OpenAI
 // TODO: create server to communicate with OpenAI
 // Using the openai package in a browser is discouraged
 const OPEN_AI_API_KEY = import.meta.env.VITE_PUBLIC_OPEN_AI_API_KEY;
-const openai = new OpenAI({
-  apiKey: OPEN_AI_API_KEY,
-  dangerouslyAllowBrowser: true,
-});
+const openai = OPEN_AI_API_KEY
+  ? new OpenAI({
+      apiKey: OPEN_AI_API_KEY,
+      dangerouslyAllowBrowser: true,
+    })
+  : undefined;
 
 const DashboardDefault = () => {
   // TODO: use updateId to keep track latest message
@@ -55,13 +52,7 @@ const DashboardDefault = () => {
   const [pollingInterval, setPollingInterval] = useState(null);
   const [summarySuccessAlert, setSummarySuccessAlert] = useState(false);
   const [generatingSummary, setGeneratingSummary] = useState(false);
-
-  // Mint NFT
-  const { wallet, setError, updateMints, mints, sdkConnected } = useMetaMask();
-  const [isMinting, setIsMinting] = useState(false);
-  const [ticketCollection, setTicketCollection] = useState<TicketFormatted[]>(
-    [],
-  );
+  const [draftReports, setDraftReports] = useState([]);
 
   const startPolling = () => {
     // reset
@@ -108,112 +99,33 @@ const DashboardDefault = () => {
   };
 
   const generateSummary = async () => {
-    setGeneratingSummary(true);
     try {
-      const completion = await openai.chat.completions.create({
-        messages: [
-          { role: 'system', content: 'construction report' },
-          {
-            role: 'user',
-            content: `generate summary in point form for the following ${summary}`,
-          },
-        ],
-        model: 'gpt-3.5-turbo',
-      });
+      if (openai) {
+        setGeneratingSummary(true);
+        const completion = await openai.chat.completions.create({
+          messages: [
+            { role: 'system', content: 'construction report' },
+            {
+              role: 'user',
+              content: `generate summary in point form for the following ${summary}`,
+            },
+          ],
+          model: 'gpt-3.5-turbo',
+        });
 
-      setSummary(completion.choices[0].message.content);
-      setSummarySuccessAlert(true);
-      setGeneratingSummary(false);
+        setSummary(completion.choices[0].message.content);
+        setSummarySuccessAlert(true);
+        setGeneratingSummary(false);
+      }
     } catch {
       setSummarySuccessAlert(false);
       setGeneratingSummary(false);
     }
   };
 
-  const mintTicket = async () => {
-    setIsMinting(true);
-
-    const provider = new ethers.providers.Web3Provider(
-      window.ethereum as unknown as ethers.providers.ExternalProvider,
-    );
-    // In ethers.js, providers allow you to query data from the blockchain.
-    // They represent the way you connect to the blockchain.
-    // With them you can only call view methods on contracts and get data from those contract.
-    // Signers are authenticated providers connected to the current address in MetaMask.
-    const signer = provider.getSigner();
-
-    const factory = new ReportTickets__factory(signer);
-    const networkId = import.meta.env.VITE_PUBLIC_NETWORK_ID;
-
-    if (!isSupportedNetwork(networkId)) {
-      throw new Error('Deafult Linea Goerli');
-    }
-
-    const nftTickets = factory.attach(config[networkId].contractAddress);
-
-    if (wallet.accounts.length > 0) {
-      nftTickets
-        .mintNFT({
-          from: wallet.address,
-          value: ethers.utils.parseEther('0.01')._hex,
-        })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .then(async (tx: any) => {
-          console.log('minting accepted');
-          await tx.wait(1);
-          console.log(`Minting complete, mined: ${tx}`);
-          updateMints();
-          setIsMinting(false);
-        })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .catch((error: any) => {
-          console.log(error);
-          setError(error?.code);
-          setIsMinting(false);
-        });
-    }
+  const fetchDraftReports = (newItem) => {
+    setDraftReports((array) => [...array, newItem]);
   };
-
-  const disableMint = !wallet.address || isMinting;
-
-  // fetch minted NFTs
-  useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      wallet.address !== null &&
-      window.ethereum
-    ) {
-      const provider = new ethers.providers.Web3Provider(
-        window.ethereum as unknown as ethers.providers.ExternalProvider,
-      );
-      const signer = provider.getSigner();
-      const factory = new ReportTickets__factory(signer);
-
-      if (!isSupportedNetwork(wallet.chainId)) {
-        return;
-      }
-
-      const nftTickets = factory.attach(config[wallet.chainId].contractAddress);
-      const ticketsRetrieved = [];
-
-      nftTickets.walletOfOwner(wallet.address).then((ownedTickets) => {
-        const promises = ownedTickets.map(async (token) => {
-          const currentTokenId = token.toString();
-          const currentTicket = await nftTickets.tokenURI(currentTokenId);
-
-          const base64ToString = window.atob(
-            currentTicket.replace('data:application/json;base64,', ''),
-          );
-          const nftData = JSON.parse(base64ToString);
-
-          ticketsRetrieved.push({
-            tokenId: currentTokenId,
-          });
-        });
-        Promise.all(promises).then(() => setTicketCollection(ticketsRetrieved));
-      });
-    }
-  }, [wallet.address, mints, wallet.chainId, sdkConnected]);
 
   return (
     <Grid container rowSpacing={5} columnSpacing={3}>
@@ -308,35 +220,28 @@ const DashboardDefault = () => {
       <Grid item xs={12}>
         <Typography variant="h5">Report Template</Typography>
         <MainCard sx={{ mt: 2 }}>
-          <FormikContainer photos={selectedPhotos} description={summary} />
+          <FormikContainer
+            photos={selectedPhotos}
+            description={summary}
+            onCreated={fetchDraftReports}
+          />
         </MainCard>
       </Grid>
 
-      {/* <Button
-        variant="contained"
-        sx={{ marginTop: '5px' }}
-        disabled={disableMint}
-        onClick={mintTicket}
-      >
-        <SiEthereum /> {isMinting ? 'Minting...' : 'Mint'} NFT
-      </Button> */}
-
-      <Grid
-        item
-        md={8}
-        sx={{ display: { sm: 'none', md: 'block', lg: 'none' } }}
-      />
-
       {/* row 2 */}
-      <Grid item xs={12} md={10} lg={10}>
-        <Grid container alignItems="center" justifyContent="space-between">
-          <Grid item>
-            <Typography variant="h5">Draft Reports</Typography>
+      {draftReports && draftReports.length > 0 && (
+        <Grid item xs={12} md={10} lg={10}>
+          <Grid container alignItems="center" justifyContent="space-between">
+            <Grid item>
+              <Typography variant="h5">Draft Reports</Typography>
+            </Grid>
+            <Grid item />
           </Grid>
-          <Grid item />
+          <MainCard sx={{ mt: 2 }} content={false}>
+            <DraftReports collection={draftReports}></DraftReports>
+          </MainCard>
         </Grid>
-        <MainCard sx={{ mt: 2 }} content={false}></MainCard>
-      </Grid>
+      )}
 
       {/* row 3 */}
       <Grid item xs={12} md={10} lg={10}>
@@ -347,7 +252,7 @@ const DashboardDefault = () => {
           <Grid item />
         </Grid>
         <MainCard sx={{ mt: 2 }} content={false}>
-          <ReportsTable collection={ticketCollection} />
+          <ReportsTable />
         </MainCard>
       </Grid>
     </Grid>
